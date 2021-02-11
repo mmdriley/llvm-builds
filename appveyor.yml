@@ -2,6 +2,9 @@
 
 image: macos
 
+install:
+- brew install ninja
+
 build_script:
 - df -h .
 - git clone --depth=1 https://github.com/llvm/llvm-project.git
