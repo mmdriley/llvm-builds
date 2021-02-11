@@ -11,14 +11,9 @@ install:
 
 build_script:
 - df -h .
-- git clone --depth=1 https://github.com/llvm/llvm-project.git
-# YAML does the "right thing" with the multiline string
-- cmake
-      -G Ninja
-      -B build
-      -DCMAKE_BUILD_TYPE=RelWithDebInfo
-      -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;compiler-rt;lld;debuginfo-tests"
-      llvm-project/llvm
+- git clone https://github.com/llvm/llvm-project.git
+- git -C llvm-project checkout 930c74f12d799c95e37a107bb692148b36493806
+- cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
 - date
 - cmake --build build
 - date
