@@ -1,6 +1,10 @@
 # https://www.appveyor.com/docs/appveyor-yml/
 
+# https://www.appveyor.com/docs/macos-images-software/
 image: macos
+
+environment:
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
 
 install:
 - brew install ninja
@@ -15,6 +19,10 @@ build_script:
       -DCMAKE_BUILD_TYPE=RelWithDebInfo
       -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;compiler-rt;lld;debuginfo-tests"
       llvm-project/llvm
+- date
+- cmake --build build
+- date
+- du -h build
 - df -h .
 
 test: off
