@@ -1,0 +1,9 @@
+# https://www.appveyor.com/docs/appveyor-yml/
+
+image: macos
+
+build: off
+
+test_script:
+  # Check disk space
+  - df -h
