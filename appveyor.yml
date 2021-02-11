@@ -2,8 +2,16 @@
 
 image: macos
 
-build: off
+build_script:
+- df -h .
+- git clone --depth=1 https://github.com/llvm/llvm-project.git
+# YAML does the "right thing" with the multiline string
+- cmake
+      -G Ninja
+      -B build
+      -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;libcxx;libcxxabi;compiler-rt;lld;debuginfo-tests"
+      llvm-project/llvm
+- df -h .
 
-test_script:
-  # Check disk space
-  - df -h
+test: off
