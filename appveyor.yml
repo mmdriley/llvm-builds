@@ -4,21 +4,25 @@
 image: macos
 
 environment:
-  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  PATH: "/Users/appveyor/bin:${PATH}"
 
 install:
-- echo $PATH
+# `brew install ninja` is simpler but takes a lot longer
+- mkdir -p /Users/appveyor/bin
+- curl -L 'https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-mac.zip' -o /tmp/ninja-mac.zip
+- unzip /tmp/ninja-mac.zip -d /Users/appveyor/bin/
+- echo "${PATH}"
+- which ninja
 
 build_script:
-- echo done
-# - df -h .
-# - git clone https://github.com/llvm/llvm-project.git
-# - git -C llvm-project checkout 930c74f12d799c95e37a107bb692148b36493806
-# - cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
-# - date
-# - cmake --build build
-# - date
-# - du -h build
-# - df -h .
+- df -h .
+- git clone https://github.com/llvm/llvm-project.git
+- git -C llvm-project checkout 930c74f12d799c95e37a107bb692148b36493806
+- cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+- date
+- cmake --build build
+- date
+- du -h build
+- df -h .
 
 test: off
