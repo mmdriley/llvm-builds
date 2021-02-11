@@ -4,7 +4,7 @@
 image: macos
 
 environment:
-  PATH: "/Users/appveyor/bin:${PATH}"
+  PATH: /Users/appveyor/bin:${PATH}
 
 install:
 # `brew install ninja` is simpler but takes a lot longer
