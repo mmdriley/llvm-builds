@@ -3,15 +3,10 @@
 # https://www.appveyor.com/docs/macos-images-software/
 image: macos
 
-environment:
-  PATH: /Users/appveyor/bin:${PATH}
-
 install:
 # `brew install ninja` is simpler but takes a lot longer
-- mkdir -p /Users/appveyor/bin
 - curl -L 'https://github.com/ninja-build/ninja/releases/download/v1.10.2/ninja-mac.zip' -o /tmp/ninja-mac.zip
-- unzip /tmp/ninja-mac.zip -d /Users/appveyor/bin/
-- echo "${PATH}"
+- unzip /tmp/ninja-mac.zip -d /usr/local/bin/
 - which ninja
 
 build_script:
