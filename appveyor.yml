@@ -7,17 +7,18 @@ environment:
   HOMEBREW_NO_INSTALL_CLEANUP: 1
 
 install:
-- brew install ninja
+- echo $PATH
 
 build_script:
-- df -h .
-- git clone https://github.com/llvm/llvm-project.git
-- git -C llvm-project checkout 930c74f12d799c95e37a107bb692148b36493806
-- cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
-- date
-- cmake --build build
-- date
-- du -h build
-- df -h .
+- echo done
+# - df -h .
+# - git clone https://github.com/llvm/llvm-project.git
+# - git -C llvm-project checkout 930c74f12d799c95e37a107bb692148b36493806
+# - cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+# - date
+# - cmake --build build
+# - date
+# - du -h build
+# - df -h .
 
 test: off
