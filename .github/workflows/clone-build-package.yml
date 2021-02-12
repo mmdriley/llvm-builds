@@ -12,9 +12,14 @@ jobs:
     name: Clone, build, and package
     runs-on: macos-10.15
     steps:
-      - name: Clone
-        run: git clone https://github.com/llvm/llvm-project.git
-      - name: Check out revision
-        run: git -C llvm-project checkout 1d42ba254fa3203f1ad5916ed414a84312f5bba9
+      - name: checkout build-llvm
+        uses: actions/checkout@v2
+      - name: checkout llvm-project
+        uses: actions/checkout@v2
+        with:
+          repository: llvm/llvm-project
+          path: llvm-project
+          ref: 930c74f12d799c95e37a107bb692148b36493806
+          fetch-depth: 1
       - name: CMake configure
         run: cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
