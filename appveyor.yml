@@ -12,12 +12,17 @@ install:
 build_script:
 - df -h .
 - git clone https://github.com/llvm/llvm-project.git
-- git -C llvm-project checkout 930c74f12d799c95e37a107bb692148b36493806
+- git -C llvm-project checkout 1d42ba254fa3203f1ad5916ed414a84312f5bba9
+# save 1.5 GB?
+# - rm -rf llvm-project/.git
 - cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
 - date
 - cmake --build build
 - date
-- du -h build
+- df -h .
+- cmake --install build --prefix install
+- df -h .
+- tar cvzf clang.tar.gz -C install/ .
 - df -h .
 
 test: off

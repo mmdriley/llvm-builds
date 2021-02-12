@@ -1,2 +1,4 @@
 llvm-project/
 build/
+install/
+clang.tar.gz
