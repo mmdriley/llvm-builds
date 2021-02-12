@@ -1,0 +1,20 @@
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+name: Clone, build, and package
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  clone_build_package:
+    name: Clone, build, and package
+    runs-on: macos-10.15
+    steps:
+      - name: Clone
+        run: git clone https://github.com/llvm/llvm-project.git
+      - name: Check out revision
+        run: git -C llvm-project checkout 1d42ba254fa3203f1ad5916ed414a84312f5bba9
+      - name: CMake configure
+        run: cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
