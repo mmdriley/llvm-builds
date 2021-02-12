@@ -12,6 +12,8 @@ jobs:
     name: Clone, build, and package
     runs-on: macos-10.15
     steps:
+      - name: check disk space
+        run: df -h .
       - name: install Ninja
         run: brew install ninja
       - name: checkout build-llvm
@@ -23,5 +25,17 @@ jobs:
           path: llvm-project
           ref: 930c74f12d799c95e37a107bb692148b36493806
           fetch-depth: 1
-      - name: CMake configure
+      - name: configure
         run: cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+      - name: check disk space
+        run: df -h .
+      - name: build
+        run: cmake --build build
+      - name: check disk space
+        run: df -h .
+      - name: create install
+        run: cmake --install build --prefix install
+      - name: check disk space
+        run: df -h .
+      - name: show disk usage
+        run: du -h -d 1
