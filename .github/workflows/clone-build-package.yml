@@ -19,10 +19,19 @@ jobs:
         include:
           - os: ubuntu-18.04
             install_ninja_command: sudo apt install ninja-build
+            cc: clang
+            cxx: clang++
           - os: macos-10.15
             install_ninja_command: brew install ninja
+            cc: clang
+            cxx: clang++
           - os: windows-2019
             install_ninja_command: choco install ninja
+            # llvm fails to build with mingw
+            # maybe consider `choco install llvm` and just go ahead and build
+            # with latest clang, to avoid difference across platforms?
+            cc: cl
+            cxx: cl
 
     defaults:
       run:
@@ -50,8 +59,8 @@ jobs:
       - name: configure
         run: cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
         env:
-          CC: clang
-          CXX: clang++
+          CC: ${{matrix.cc}}
+          CXX: ${{matrix.cxx}}
 
       - name: check disk space
         run: df -h .
