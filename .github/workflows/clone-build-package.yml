@@ -1,6 +1,6 @@
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
-name: LLVM release
+name: Create LLVM release
 
 on:
   push:
@@ -11,30 +11,31 @@ env:
   LLVM_REF: 930c74f12d799c95e37a107bb692148b36493806
 
 jobs:
-  clone_build_package:
+  release_from_source:
     strategy:
+      fail-fast: false
+
       matrix:
-        os: [ubuntu-18.04, macos-10.15, windows-2019]
+        include:
+          - os: ubuntu-18.04
+            install_ninja_command: sudo apt install ninja-build
+          - os: macos-10.15
+            install_ninja_command: brew install ninja
+          - os: windows-2019
+            install_ninja_command: choco install ninja
 
     defaults:
       run:
         shell: bash
 
-    name: Build LLVM release (${{matrix.os}})
+    name: Build and package LLVM (${{matrix.os}})
     runs-on: ${{matrix.os}}
     steps:
       - name: check disk space
         run: df -h .
 
-      - name: install Ninja (Mac)
-        if: startsWith(matrix.os, 'macos-')
-        run: brew install ninja
-      - name: install Ninja (Windows)
-        if: startsWith(matrix.os, 'windows-')
-        run: choco install ninja
-      - name: install Ninja (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu-')
-        run: sudo apt install ninja-build
+      - name: install Ninja
+        run: ${{matrix.install_ninja_command}}
 
       - name: checkout build-llvm
         uses: actions/checkout@v2
@@ -48,6 +49,9 @@ jobs:
 
       - name: configure
         run: cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+        env:
+          CC: clang
+          CXX: clang++
 
       - name: check disk space
         run: df -h .
@@ -71,7 +75,8 @@ jobs:
       - name: upload
         uses: actions/upload-artifact@v2
         with:
-          name: llvm
+          # runner.os is one of "Windows", "Linux", or "macOS"
+          name: llvm-${{runner.os}}
           path: llvm.7z
 
       - name: check disk space
