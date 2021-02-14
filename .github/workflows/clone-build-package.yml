@@ -37,9 +37,9 @@ jobs:
       - name: install Ninja
         run: ${{matrix.install_ninja_command}}
 
-      - name: install LLVM on Windows
-        if: runner.os == 'Windows'
-        run: choco install llvm
+      # Put MSVC (cl.exe) on PATH. No-op if not on Windows.
+      - name: Set up MSVC environment variables
+        uses: ilammy/msvc-dev-cmd@v1.5.0
 
       - name: checkout build-llvm
         uses: actions/checkout@v2
@@ -52,10 +52,17 @@ jobs:
           fetch-depth: 1
 
       - name: configure
-        run: cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
-        env:
-          CC: clang
-          CXX: clang++
+        run: |
+          # Use MSVC on Windows and Clang everywhere else.
+          if [[ '${{runner.os}}' == 'Windows' ]]; then
+            export CC=cl.exe
+            export CXX=cl.exe
+          else
+            export CC=clang
+            export CXX=clang++
+          fi
+
+          cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
 
       - name: check disk space
         run: df -h .
