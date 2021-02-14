@@ -51,13 +51,30 @@ jobs:
 
       - name: check disk space
         run: df -h .
-      # - name: build
-      #   run: cmake --build build
-      # - name: check disk space
-      #   run: df -h .
-      # - name: create install
-      #   run: cmake --install build --prefix install
-      # - name: check disk space
-      #   run: df -h .
-      # - name: show disk usage
-      #   run: du -h -d 1
+
+      - name: build
+        run: cmake --build build
+
+      - name: check disk space
+        run: df -h .
+
+      - name: create install
+        run: cmake --install build --prefix install
+
+      - name: check disk space
+        run: df -h .
+
+      - name: package
+        run: 7z a ../llvm.7z .
+        working-directory: ./install
+
+      - name: upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: llvm
+          path: llvm.7z
+
+      - name: check disk space
+        run: df -h .
+      - name: show disk usage
+        run: du -h -d 1
