@@ -1,21 +1,41 @@
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
-name: Clone, build, and package
+name: LLVM release
 
 on:
   push:
     branches:
       - main
 
+env:
+  LLVM_REF: 930c74f12d799c95e37a107bb692148b36493806
+
 jobs:
   clone_build_package:
-    name: Clone, build, and package
-    runs-on: macos-10.15
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-10.15, windows-2019]
+
+    defaults:
+      run:
+        shell: bash
+
+    name: Build LLVM release (${{matrix.os}})
+    runs-on: ${{matrix.os}}
     steps:
       - name: check disk space
         run: df -h .
-      - name: install Ninja
+
+      - name: install Ninja (Mac)
+        if: startsWith(matrix.os, 'macos-')
         run: brew install ninja
+      - name: install Ninja (Windows)
+        if: startsWith(matrix.os, 'windows-')
+        run: choco install ninja
+      - name: install Ninja (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu-')
+        run: sudo apt install ninja-build
+
       - name: checkout build-llvm
         uses: actions/checkout@v2
       - name: checkout llvm-project
@@ -23,19 +43,21 @@ jobs:
         with:
           repository: llvm/llvm-project
           path: llvm-project
-          ref: 930c74f12d799c95e37a107bb692148b36493806
+          ref: ${{ env.LLVM_REF }}
           fetch-depth: 1
+
       - name: configure
         run: cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+
       - name: check disk space
         run: df -h .
-      - name: build
-        run: cmake --build build
-      - name: check disk space
-        run: df -h .
-      - name: create install
-        run: cmake --install build --prefix install
-      - name: check disk space
-        run: df -h .
-      - name: show disk usage
-        run: du -h -d 1
+      # - name: build
+      #   run: cmake --build build
+      # - name: check disk space
+      #   run: df -h .
+      # - name: create install
+      #   run: cmake --install build --prefix install
+      # - name: check disk space
+      #   run: df -h .
+      # - name: show disk usage
+      #   run: du -h -d 1
