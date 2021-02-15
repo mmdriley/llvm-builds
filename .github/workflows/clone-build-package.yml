@@ -11,26 +11,7 @@ env:
   LLVM_REF: 930c74f12d799c95e37a107bb692148b36493806
 
 jobs:
-  create_release:
-    name: Create new release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: rel${{ github.run_number }}
-          release_name: release ${{ github.run_number }}
-          body: |
-            run ${{ github.run_number }}
-            llvm @ ${{ env.LLVM_REF }}
-            builder @ ${{ github.sha }}
-    outputs:
-      upload_url: ${{ steps.create_release.upload_url }}
-
-  release_from_source:
-    needs: create_release
-
+  build:
     strategy:
       fail-fast: false
 
@@ -47,7 +28,7 @@ jobs:
       run:
         shell: bash  # even on Windows
 
-    name: Build and package (${{matrix.os}})
+    name: Build (${{matrix.os}})
     runs-on: ${{matrix.os}}
     steps:
       # - name: install Ninja
@@ -98,20 +79,39 @@ jobs:
       - name: hash
         run: shasum --algorithm 256 llvm.7z
 
-      # - name: upload
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     # runner.os is one of "Windows", "Linux", or "macOS"
-      #     name: llvm-${{runner.os}}
-      #     path: llvm.7z
-
-      - name: upload asset
-        uses: actions/upload-release-asset@v1
+      - name: upload artifact
+        uses: actions/upload-artifact@v2
         with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: llvm.7z
-          asset_name: llvm-${{ runner.os }}.7z
-          asset_content_type: application/x-7z-compressed
+          # runner.os is one of "Windows", "Linux", or "macOS"
+          name: llvm-${{runner.os}}
+          path: llvm.7z
 
       - name: show remaining disk space
         run: df -h .
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # when used with no arguments, downloads all artifacts, each into its own
+      # directory named for its artifact name.
+      - name: download artifacts
+        uses: actions/download-artifact@v2
+
+      - name: create release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: rel${{ github.run_number }}
+          release_name: release ${{ github.run_number }}
+          body: |
+            run ${{ github.run_number }}
+            llvm @ ${{ env.LLVM_REF }}
+            builder @ ${{ github.sha }}
+          files: |
+            llvm-Linux/llvm.7z
+            llvm-macOS/llvm.7z
+            llvm-Windows/llvm.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
