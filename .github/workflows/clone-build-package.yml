@@ -77,7 +77,7 @@ jobs:
         working-directory: ./install
 
       - name: hash
-        run: shasum --algorithm 256 llvm.7z
+        run: openssl dgst -sha256 llvm.7z
 
       - name: upload artifact
         uses: actions/upload-artifact@v2
