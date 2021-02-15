@@ -31,46 +31,41 @@ jobs:
     name: Build (${{matrix.os}})
     runs-on: ${{matrix.os}}
     steps:
-      # - name: install Ninja
-      #   run: ${{matrix.install_ninja_command}}
+      - name: install Ninja
+        run: ${{matrix.install_ninja_command}}
 
-      # # Put MSVC (cl.exe) on PATH. No-op if not on Windows.
-      # - name: Set up MSVC environment variables
-      #   uses: ilammy/msvc-dev-cmd@v1.5.0
+      # Put MSVC (cl.exe) on PATH. No-op unless on Windows.
+      - name: Set up MSVC environment variables
+        uses: ilammy/msvc-dev-cmd@v1.5.0
 
-      # - name: checkout build-llvm
-      #   uses: actions/checkout@v2
-      # - name: checkout llvm-project
-      #   uses: actions/checkout@v2
-      #   with:
-      #     repository: llvm/llvm-project
-      #     path: llvm-project
-      #     ref: ${{ env.LLVM_REF }}
-      #     fetch-depth: 1
+      - name: checkout build-llvm
+        uses: actions/checkout@v2
+      - name: checkout llvm-project
+        uses: actions/checkout@v2
+        with:
+          repository: llvm/llvm-project
+          path: llvm-project
+          ref: ${{ env.LLVM_REF }}
+          fetch-depth: 1
 
-      # - name: configure
-      #   run: |
-      #     # Use MSVC on Windows and Clang everywhere else.
-      #     if [[ '${{runner.os}}' == 'Windows' ]]; then
-      #       export CC=cl.exe
-      #       export CXX=cl.exe
-      #     else
-      #       export CC=clang
-      #       export CXX=clang++
-      #     fi
-
-      #     cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
-
-      # - name: build
-      #   run: cmake --build build
-
-      # - name: install
-      #   run: cmake --install build --prefix install
-
-      - name: fake install
+      - name: configure
         run: |
-          mkdir install
-          touch install/hello
+          # Use MSVC on Windows and Clang everywhere else.
+          if [[ '${{runner.os}}' == 'Windows' ]]; then
+            export CC=cl.exe
+            export CXX=cl.exe
+          else
+            export CC=clang
+            export CXX=clang++
+          fi
+
+          cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+
+      - name: build
+        run: cmake --build build
+
+      - name: install
+        run: cmake --install build --prefix install
 
       - name: package
         run: 7z a ../llvm.7z .
@@ -111,13 +106,12 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: rel${{ github.run_number }}
-          release_name: release ${{ github.run_number }}
+          tag_name: r${{ github.run_number }}
+          release_name: build ${{ github.run_number }}
           body: |
-            ${{ github.repository }}@${{ github.sha }}
             llvm/llvm-project@${{ env.LLVM_REF }}
 
-            build logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
           # List each OS explicitly so the release will fail if any are missing.
           files: |
