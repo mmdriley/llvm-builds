@@ -1,6 +1,6 @@
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
-name: Create LLVM release
+name: Build and publish release
 
 on:
   push:
@@ -28,12 +28,9 @@ jobs:
       run:
         shell: bash
 
-    name: Build and package LLVM (${{matrix.os}})
+    name: Build and package (${{matrix.os}})
     runs-on: ${{matrix.os}}
     steps:
-      - name: check disk space
-        run: df -h .
-
       - name: install Ninja
         run: ${{matrix.install_ninja_command}}
 
@@ -64,24 +61,18 @@ jobs:
 
           cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
 
-      - name: check disk space
-        run: df -h .
-
       - name: build
         run: cmake --build build
 
-      - name: check disk space
-        run: df -h .
-
-      - name: create install
+      - name: install
         run: cmake --install build --prefix install
-
-      - name: check disk space
-        run: df -h .
 
       - name: package
         run: 7z a ../llvm.7z .
         working-directory: ./install
+
+      - name: hash
+        run: shasum --algorithm 256 llvm.7z
 
       - name: upload
         uses: actions/upload-artifact@v2
@@ -90,7 +81,5 @@ jobs:
           name: llvm-${{runner.os}}
           path: llvm.7z
 
-      - name: check disk space
+      - name: show remaining disk space
         run: df -h .
-      - name: show disk usage
-        run: du -h -d 1
