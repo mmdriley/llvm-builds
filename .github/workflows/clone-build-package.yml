@@ -99,6 +99,14 @@ jobs:
       - name: download artifacts
         uses: actions/download-artifact@v2
 
+      # Give files different names so they don't collide in the release.
+      # Include the run number so users can download+extract multiple releases.
+      - name: rename and rearrange
+        run: |
+          mv llvm-Linux/llvm.7z llvm-linux-${{ github.run_number }}.7z
+          mv llvm-macOS/llvm.7z llvm-macos-${{ github.run_number }}.7z
+          mv llvm-Windows/llvm.7z llvm-windows-${{ github.run_number }}.7z
+
       - name: create release
         id: create_release
         uses: softprops/action-gh-release@v1
@@ -106,12 +114,12 @@ jobs:
           tag_name: rel${{ github.run_number }}
           release_name: release ${{ github.run_number }}
           body: |
-            run ${{ github.run_number }}
-            llvm @ ${{ env.LLVM_REF }}
+            llvm/llvm-project@${{ env.LLVM_REF }}
             builder @ ${{ github.sha }}
+          # List each OS explicitly so the release will fail if one is missing.
           files: |
-            llvm-Linux/llvm.7z
-            llvm-macOS/llvm.7z
-            llvm-Windows/llvm.7z
+            llvm-linux-*.7z
+            llvm-macos-*.7z
+            llvm-windows-*.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
