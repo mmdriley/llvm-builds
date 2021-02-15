@@ -108,7 +108,7 @@ jobs:
       - name: upload asset
         uses: actions/upload-release-asset@v1
         with:
-          upload_url: ${{ jobs.create_release.upload_url }}
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: llvm.7z
           asset_name: llvm-${{ runner.os }}.7z
           asset_content_type: application/x-7z-compressed
