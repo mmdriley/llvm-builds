@@ -1,6 +1,6 @@
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
-name: Build and publish release
+name: Build and release
 
 on:
   push:
@@ -94,7 +94,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # when used with no arguments, downloads all artifacts, each into its own
+      # When used with no arguments, downloads all artifacts, each into its own
       # directory named for its artifact name.
       - name: download artifacts
         uses: actions/download-artifact@v2
@@ -114,9 +114,12 @@ jobs:
           tag_name: rel${{ github.run_number }}
           release_name: release ${{ github.run_number }}
           body: |
+            ${{ github.repository }}@${{ github.sha }}
             llvm/llvm-project@${{ env.LLVM_REF }}
-            builder @ ${{ github.sha }}
-          # List each OS explicitly so the release will fail if one is missing.
+
+            build logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          # List each OS explicitly so the release will fail if any are missing.
           files: |
             llvm-linux-*.7z
             llvm-macos-*.7z
