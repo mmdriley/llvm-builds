@@ -11,7 +11,26 @@ env:
   LLVM_REF: 930c74f12d799c95e37a107bb692148b36493806
 
 jobs:
+  create_release:
+    name: Create new release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: rel${{ github.run_number }}
+          release_name: release ${{ github.run_number }}
+          body: |
+            run ${{ github.run_number }}
+            llvm @ ${{ env.LLVM_REF }}
+            builder @ ${{ github.sha }}
+    outputs:
+      upload_url: ${{ steps.create_release.upload_url }}
+
   release_from_source:
+    needs: create_release
+
     strategy:
       fail-fast: false
 
@@ -26,46 +45,51 @@ jobs:
 
     defaults:
       run:
-        shell: bash
+        shell: bash  # even on Windows
 
     name: Build and package (${{matrix.os}})
     runs-on: ${{matrix.os}}
     steps:
-      - name: install Ninja
-        run: ${{matrix.install_ninja_command}}
+      # - name: install Ninja
+      #   run: ${{matrix.install_ninja_command}}
 
-      # Put MSVC (cl.exe) on PATH. No-op if not on Windows.
-      - name: Set up MSVC environment variables
-        uses: ilammy/msvc-dev-cmd@v1.5.0
+      # # Put MSVC (cl.exe) on PATH. No-op if not on Windows.
+      # - name: Set up MSVC environment variables
+      #   uses: ilammy/msvc-dev-cmd@v1.5.0
 
-      - name: checkout build-llvm
-        uses: actions/checkout@v2
-      - name: checkout llvm-project
-        uses: actions/checkout@v2
-        with:
-          repository: llvm/llvm-project
-          path: llvm-project
-          ref: ${{ env.LLVM_REF }}
-          fetch-depth: 1
+      # - name: checkout build-llvm
+      #   uses: actions/checkout@v2
+      # - name: checkout llvm-project
+      #   uses: actions/checkout@v2
+      #   with:
+      #     repository: llvm/llvm-project
+      #     path: llvm-project
+      #     ref: ${{ env.LLVM_REF }}
+      #     fetch-depth: 1
 
-      - name: configure
+      # - name: configure
+      #   run: |
+      #     # Use MSVC on Windows and Clang everywhere else.
+      #     if [[ '${{runner.os}}' == 'Windows' ]]; then
+      #       export CC=cl.exe
+      #       export CXX=cl.exe
+      #     else
+      #       export CC=clang
+      #       export CXX=clang++
+      #     fi
+
+      #     cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+
+      # - name: build
+      #   run: cmake --build build
+
+      # - name: install
+      #   run: cmake --install build --prefix install
+
+      - name: fake install
         run: |
-          # Use MSVC on Windows and Clang everywhere else.
-          if [[ '${{runner.os}}' == 'Windows' ]]; then
-            export CC=cl.exe
-            export CXX=cl.exe
-          else
-            export CC=clang
-            export CXX=clang++
-          fi
-
-          cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
-
-      - name: build
-        run: cmake --build build
-
-      - name: install
-        run: cmake --install build --prefix install
+          mkdir install
+          touch install/hello
 
       - name: package
         run: 7z a ../llvm.7z .
@@ -74,12 +98,20 @@ jobs:
       - name: hash
         run: shasum --algorithm 256 llvm.7z
 
-      - name: upload
-        uses: actions/upload-artifact@v2
+      # - name: upload
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     # runner.os is one of "Windows", "Linux", or "macOS"
+      #     name: llvm-${{runner.os}}
+      #     path: llvm.7z
+
+      - name: upload asset
+        uses: actions/upload-release-asset@v1
         with:
-          # runner.os is one of "Windows", "Linux", or "macOS"
-          name: llvm-${{runner.os}}
-          path: llvm.7z
+          upload_url: ${{ jobs.create_release.upload_url }}
+          asset_path: llvm.7z
+          asset_name: llvm-${{ runner.os }}.7z
+          asset_content_type: application/x-7z-compressed
 
       - name: show remaining disk space
         run: df -h .
