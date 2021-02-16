@@ -1,0 +1,154 @@
+# https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+
+# Build LLVM on Linux, macOS, and Windows at the commit in `llvm-commit.txt`.
+# Create a new release with those builds attached.
+
+name: Build and release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      # Continue other builds if one fails; harmless and useful for testing.
+      # The release job will only run if all builds succeed.
+      fail-fast: false
+
+      matrix:
+        # Prefer older OS versions when available in the hopes that the
+        # builds produced will have broader compatibility.
+        os: [ubuntu-18.04, macos-10.15, windows-2019]
+
+    defaults:
+      run:
+        shell: bash  # even on Windows
+
+    name: Build (${{matrix.os}})
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: get LLVM commit
+        id: get_llvm_commit
+        run: echo "::set-output name=commit::$(<llvm-commit.txt)"
+
+      - name: checkout llvm-project
+        uses: actions/checkout@v2
+        with:
+          repository: llvm/llvm-project
+          path: llvm-project
+          ref: ${{ steps.get_llvm_commit.outputs.commit }}
+          fetch-depth: 1
+
+      # Install Ninja and put it on the path. This action handles platform
+      # detection and is a lot faster than e.g. `choco install` on Windows.
+      - name: install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v3
+        with:
+          version: 1.10.2  # newest when checked in
+
+      # Put MSVC (cl.exe) on PATH. No-op on non-Windows runners.
+      - name: set MSVC environment variables
+        uses: ilammy/msvc-dev-cmd@v1.5.0
+
+      - name: configure
+        run: |
+          # Use MSVC on Windows and Clang everywhere else.
+          # Using MSVC fixed build errors related to platform headers that were
+          # observed when CMake was left to its first choice, MinGW.
+          if [[ '${{runner.os}}' == 'Windows' ]]; then
+            export CC=cl.exe
+            export CXX=cl.exe
+          else
+            export CC=clang
+            export CXX=clang++
+          fi
+
+          # Add options from `cmake-defines.txt` to the command line, but
+          # treat lines that start with `#` as comments and remove them.
+          cmake \
+              -G Ninja \
+              -B build \
+              $(grep -v '^#' cmake-defines.txt) \
+              llvm-project/llvm
+
+      - name: build
+        run: cmake --build build
+
+      - name: install
+        run: cmake --install build --prefix install
+
+      - name: package
+        run: 7z a ../llvm.7z .
+        working-directory: ./install
+
+      # Print the archive hash to the build log for traceability.
+      - name: hash
+        run: openssl dgst -sha256 llvm.7z
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          # runner.os is one of "Windows", "Linux", or "macOS"
+          name: llvm-${{runner.os}}
+          path: llvm.7z
+
+      # Show disk space left after the build. Not currently a problem, but LLVM
+      # is big and changing build options might put us over the 14GB we're
+      # nominally granted. Real-world allotments seem larger, though.
+      #
+      # https://docs.github.com/en/actions/reference/specifications-for-github-hosted-runners
+      - name: show disk usage
+        run: df -h .
+    outputs:
+      llvm_commit: ${{ steps.get_llvm_commit.outputs.commit }}
+
+  release:
+    name: Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # When used with no arguments, downloads all artifacts, each into a
+      # directory matching the artifact name.
+      - name: download artifacts
+        uses: actions/download-artifact@v2
+
+      # Give files different names so they don't collide in the release.
+      # Include the run number so users can download+extract multiple releases.
+      - name: rename and rearrange
+        run: |
+          mv llvm-Linux/llvm.7z llvm-linux-${{ github.run_number }}.7z
+          mv llvm-macOS/llvm.7z llvm-macos-${{ github.run_number }}.7z
+          mv llvm-Windows/llvm.7z llvm-windows-${{ github.run_number }}.7z
+
+      # Include LLVM commit from the builder in the release message.
+      # Oddly, the output from a matrixed job is returned as a single value --
+      # maybe "last write wins" ? -- rather than as a list. This works for us
+      # because all job instances output the same value.
+      # discussion: https://github.community/t/bug-jobs-output-should-return-a-list-for-a-matrix-job/128626
+      #
+      # GitHub will turn `owner/repo@SHA` into a link, though not the more
+      # general `owner/repo@ref`.
+      # ref: https://docs.github.com/en/github/writing-on-github/autolinked-references-and-urls
+      - name: create release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: r${{ github.run_number }}
+          name: build ${{ github.run_number }}
+          body: |
+            llvm/llvm-project@${{ needs.build.outputs.llvm_commit }}
+
+            build logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          # List each OS explicitly so the release will fail if any are missing.
+          files: |
+            llvm-linux-*.7z
+            llvm-macos-*.7z
+            llvm-windows-*.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
