@@ -1,6 +1,6 @@
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
-# Build LLVM on Linux, macOS, and Windows at the commit in `llvm_commit`.
+# Build LLVM on Linux, macOS, and Windows at the commit in `llvm-commit.txt`.
 # Create a new release with those builds attached.
 
 name: Build and release
@@ -13,6 +13,8 @@ on:
 jobs:
   build:
     strategy:
+      # Continue other builds if one fails; harmless and useful for testing.
+      # The release job will only run if all builds succeed.
       fail-fast: false
 
       matrix:
@@ -32,7 +34,7 @@ jobs:
 
       - name: get LLVM commit
         id: get_llvm_commit
-        run: echo "::set-output name=commit::$(<llvm_commit)"
+        run: echo "::set-output name=commit::$(<llvm-commit.txt)"
 
       - name: checkout llvm-project
         uses: actions/checkout@v2
@@ -43,13 +45,13 @@ jobs:
           fetch-depth: 1
 
       # Install Ninja and put it on the path. This action handles platform
-      # detection and is a lot faster than e.g. `choco` on Windows.
+      # detection and is a lot faster than e.g. `choco install` on Windows.
       - name: install Ninja
         uses: seanmiddleditch/gha-setup-ninja@v3
         with:
           version: 1.10.2  # newest when checked in
 
-      # Put MSVC (cl.exe) on PATH. No-op unless on Windows.
+      # Put MSVC (cl.exe) on PATH. No-op on non-Windows runners.
       - name: set MSVC environment variables
         uses: ilammy/msvc-dev-cmd@v1.5.0
 
@@ -66,6 +68,8 @@ jobs:
             export CXX=clang++
           fi
 
+          # Add options from `cmake-defines.txt` to the command line, but
+          # treat lines that start with `#` as comments and remove them.
           cmake \
               -G Ninja \
               -B build \
@@ -93,7 +97,12 @@ jobs:
           name: llvm-${{runner.os}}
           path: llvm.7z
 
-      - name: show remaining disk space
+      # Show disk space left after the build. Not currently a problem, but LLVM
+      # is big and changing build options might put us over the 14GB we're
+      # nominally granted. Real-world allotments seem larger, though.
+      #
+      # https://docs.github.com/en/actions/reference/specifications-for-github-hosted-runners
+      - name: show disk usage
         run: df -h .
     outputs:
       llvm_commit: ${{ steps.get_llvm_commit.outputs.commit }}
