@@ -1,5 +1,8 @@
 # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
 
+# Build LLVM on Linux, macOS, and Windows at the commit in `llvm_commit`.
+# Create a new release with those builds attached.
+
 name: Build and release
 
 on:
@@ -13,13 +16,9 @@ jobs:
       fail-fast: false
 
       matrix:
-        include:
-          - os: ubuntu-18.04
-            install_ninja_command: sudo apt install ninja-build
-          - os: macos-10.15
-            install_ninja_command: brew install ninja
-          - os: windows-2019
-            install_ninja_command: choco install ninja
+        # Prefer older OS versions when available in the hopes that the
+        # builds produced will have broader compatibility.
+        os: [ubuntu-18.04, macos-10.15, windows-2019]
 
     defaults:
       run:
@@ -28,11 +27,15 @@ jobs:
     name: Build (${{matrix.os}})
     runs-on: ${{matrix.os}}
     steps:
+      # Install Ninja and put it on the path. This action handles platform
+      # detection and is a lot faster than e.g. `choco` on Windows.
       - name: install Ninja
-        run: ${{matrix.install_ninja_command}}
+        uses: seanmiddleditch/gha-setup-ninja@v3
+        with:
+          version: 1.10.2  # newest when checked in
 
       # Put MSVC (cl.exe) on PATH. No-op unless on Windows.
-      - name: set up MSVC environment variables
+      - name: set MSVC environment variables
         uses: ilammy/msvc-dev-cmd@v1.5.0
 
       - name: checkout
@@ -53,6 +56,8 @@ jobs:
       - name: configure
         run: |
           # Use MSVC on Windows and Clang everywhere else.
+          # Using MSVC fixed build errors related to platform headers that were
+          # observed when CMake was left to its first choice, MinGW.
           if [[ '${{runner.os}}' == 'Windows' ]]; then
             export CC=cl.exe
             export CXX=cl.exe
@@ -61,7 +66,11 @@ jobs:
             export CXX=clang++
           fi
 
-          cmake -G Ninja -B build $(grep -v '^#' cmake-defines.txt) llvm-project/llvm
+          cmake \
+              -G Ninja \
+              -B build \
+              $(grep -v '^#' cmake-defines.txt) \
+              llvm-project/llvm
 
       - name: build
         run: cmake --build build
@@ -73,6 +82,7 @@ jobs:
         run: 7z a ../llvm.7z .
         working-directory: ./install
 
+      # Print the archive hash to the build log for traceability.
       - name: hash
         run: openssl dgst -sha256 llvm.7z
 
@@ -93,8 +103,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # When used with no arguments, downloads all artifacts, each into its own
-      # directory named for its artifact name.
+      # When used with no arguments, downloads all artifacts, each into a
+      # directory matching the artifact name.
       - name: download artifacts
         uses: actions/download-artifact@v2
 
@@ -124,7 +134,7 @@ jobs:
           body: |
             llvm/llvm-project@${{ needs.build.outputs.llvm_commit }}
 
-            logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            build logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
           # List each OS explicitly so the release will fail if any are missing.
           files: |
