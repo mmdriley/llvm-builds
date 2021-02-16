@@ -27,17 +27,6 @@ jobs:
     name: Build (${{matrix.os}})
     runs-on: ${{matrix.os}}
     steps:
-      # Install Ninja and put it on the path. This action handles platform
-      # detection and is a lot faster than e.g. `choco` on Windows.
-      - name: install Ninja
-        uses: seanmiddleditch/gha-setup-ninja@v3
-        with:
-          version: 1.10.2  # newest when checked in
-
-      # Put MSVC (cl.exe) on PATH. No-op unless on Windows.
-      - name: set MSVC environment variables
-        uses: ilammy/msvc-dev-cmd@v1.5.0
-
       - name: checkout
         uses: actions/checkout@v2
 
@@ -52,6 +41,17 @@ jobs:
           path: llvm-project
           ref: ${{ steps.get_llvm_commit.outputs.commit }}
           fetch-depth: 1
+
+      # Install Ninja and put it on the path. This action handles platform
+      # detection and is a lot faster than e.g. `choco` on Windows.
+      - name: install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@v3
+        with:
+          version: 1.10.2  # newest when checked in
+
+      # Put MSVC (cl.exe) on PATH. No-op unless on Windows.
+      - name: set MSVC environment variables
+        uses: ilammy/msvc-dev-cmd@v1.5.0
 
       - name: configure
         run: |
