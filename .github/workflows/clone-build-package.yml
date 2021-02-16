@@ -7,9 +7,6 @@ on:
     branches:
       - main
 
-env:
-  LLVM_REF: 930c74f12d799c95e37a107bb692148b36493806
-
 jobs:
   build:
     strategy:
@@ -35,17 +32,22 @@ jobs:
         run: ${{matrix.install_ninja_command}}
 
       # Put MSVC (cl.exe) on PATH. No-op unless on Windows.
-      - name: Set up MSVC environment variables
+      - name: set up MSVC environment variables
         uses: ilammy/msvc-dev-cmd@v1.5.0
 
-      - name: checkout build-llvm
+      - name: checkout
         uses: actions/checkout@v2
+
+      - name: get LLVM commit
+        id: get_llvm_commit
+        run: echo "::set-output name=commit::$(<llvm_commit)"
+
       - name: checkout llvm-project
         uses: actions/checkout@v2
         with:
           repository: llvm/llvm-project
           path: llvm-project
-          ref: ${{ env.LLVM_REF }}
+          ref: ${{ steps.get_llvm_commit.outputs.commit }}
           fetch-depth: 1
 
       - name: configure
@@ -83,6 +85,8 @@ jobs:
 
       - name: show remaining disk space
         run: df -h .
+    outputs:
+      llvm_commit: ${{ steps.get_llvm_commit.outputs.commit }}
 
   release:
     name: Release
@@ -102,14 +106,23 @@ jobs:
           mv llvm-macOS/llvm.7z llvm-macos-${{ github.run_number }}.7z
           mv llvm-Windows/llvm.7z llvm-windows-${{ github.run_number }}.7z
 
+      # Include LLVM commit from the builder in the release message.
+      # Oddly, the output from a matrixed job is returned as a single value --
+      # maybe "last write wins" ? -- rather than as a list. This works for us
+      # because all job instances output the same value.
+      # discussion: https://github.community/t/bug-jobs-output-should-return-a-list-for-a-matrix-job/128626
+      #
+      # GitHub will turn `owner/repo@SHA` into a link, though not the more
+      # general `owner/repo@ref`.
+      # ref: https://docs.github.com/en/github/writing-on-github/autolinked-references-and-urls
       - name: create release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: r${{ github.run_number }}
-          release_name: build ${{ github.run_number }}
+          name: build ${{ github.run_number }}
           body: |
-            llvm/llvm-project@${{ env.LLVM_REF }}
+            llvm/llvm-project@${{ needs.build.outputs.llvm_commit }}
 
             logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
