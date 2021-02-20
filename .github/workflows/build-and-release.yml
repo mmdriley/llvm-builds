@@ -140,6 +140,15 @@ jobs:
           mv llvm-Windows/llvm.tar.xz \
               llvm-windows-${{ github.run_number }}.tar.xz
 
+      - name: hash artifacts
+        id: hash_artifacts
+        # Use `jq` to encode the output of `openssl dgst` as a JSON string.
+        # We can't use `set-output` to output a multiline string, so instead we
+        # output a string with `\n`s in it and JSON-decode it on use.
+        run: |
+          echo -n '::set-output name=hash_list_json::'
+          openssl dgst -sha256 llvm-*.tar.xz | jq -Rs .
+
       # Include LLVM commit from the builder in the release message.
       # Oddly, the output from a matrixed job is returned as a single value --
       # maybe "last write wins" ? -- rather than as a list. This works for us
@@ -155,8 +164,13 @@ jobs:
           tag_name: r${{ github.run_number }}
           name: build ${{ github.run_number }}
           draft: ${{ github.ref != 'refs/heads/main' }}
+          # See `hash_artifacts` step above for why we use `fromJSON`.
           body: |
             llvm/llvm-project@${{ needs.build.outputs.llvm_commit }}
+
+            ```
+            ${{ fromJSON(steps.hash_artifacts.outputs.hash_list_json) }}
+            ```
 
             build logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
