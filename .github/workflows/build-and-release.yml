@@ -100,7 +100,7 @@ jobs:
 
       # Print the archive hash to the build log for traceability.
       - name: hash
-        run: openssl dgst -sha256 llvm.tar.xz
+        run: openssl dgst -sha256 -r llvm.tar.xz
 
       - name: upload artifact
         uses: actions/upload-artifact@v2
@@ -147,7 +147,7 @@ jobs:
         # output a string with `\n`s in it and JSON-decode it on use.
         run: |
           echo -n '::set-output name=hash_list_json::'
-          openssl dgst -sha256 llvm-*.tar.xz | jq -Rs .
+          openssl dgst -sha256 -r llvm-*.tar.xz | jq -Rs .
 
       # Include LLVM commit from the builder in the release message.
       # Oddly, the output from a matrixed job is returned as a single value --
