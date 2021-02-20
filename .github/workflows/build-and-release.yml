@@ -8,6 +8,8 @@ name: Build and release
 on:
   push:
     branches:
+      # The `dev` branch is for fast iteration on infrastructure. It does
+      # everything except build LLVM, and the releases it publishes are drafts.
       - dev
       - main
 
