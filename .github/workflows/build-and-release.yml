@@ -130,15 +130,11 @@ jobs:
         uses: actions/download-artifact@v2
 
       # Give files different names so they don't collide in the release.
-      # Include the run number so users can download+extract multiple releases.
       - name: rename and rearrange
         run: |
-          mv llvm-Linux/llvm.tar.xz \
-              llvm-linux-${{ github.run_number }}.tar.xz
-          mv llvm-macOS/llvm.tar.xz \
-              llvm-macos-${{ github.run_number }}.tar.xz
-          mv llvm-Windows/llvm.tar.xz \
-              llvm-windows-${{ github.run_number }}.tar.xz
+          mv llvm-Linux/llvm.tar.xz llvm-linux.tar.xz
+          mv llvm-macOS/llvm.tar.xz llvm-macos.tar.xz
+          mv llvm-Windows/llvm.tar.xz llvm-windows.tar.xz
 
       - name: hash artifacts
         id: hash_artifacts
@@ -175,8 +171,8 @@ jobs:
 
           # List each OS explicitly so the release will fail if any are missing.
           files: |
-            llvm-linux-*.tar.xz
-            llvm-macos-*.tar.xz
-            llvm-windows-*.tar.xz
+            llvm-linux.tar.xz
+            llvm-macos.tar.xz
+            llvm-windows.tar.xz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
