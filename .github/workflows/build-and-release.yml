@@ -8,6 +8,7 @@ name: Build and release
 on:
   push:
     branches:
+      - dev
       - main
 
 jobs:
@@ -78,9 +79,17 @@ jobs:
 
       - name: build
         run: cmake --build build
+        if: github.ref == 'refs/heads/main'
 
       - name: install
         run: cmake --install build --prefix install
+        if: github.ref == 'refs/heads/main'
+
+      - name: trivial build+install
+        run: |
+          mkdir -p install
+          touch install/output
+        if: github.ref == 'refs/heads/dev'
 
       - name: package
         run: 7z a ../llvm.7z .
@@ -135,11 +144,11 @@ jobs:
       # general `owner/repo@ref`.
       # ref: https://docs.github.com/en/github/writing-on-github/autolinked-references-and-urls
       - name: create release
-        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: r${{ github.run_number }}
           name: build ${{ github.run_number }}
+          draft: ${{ github.ref != 'refs/heads/main' }}
           body: |
             llvm/llvm-project@${{ needs.build.outputs.llvm_commit }}
 
