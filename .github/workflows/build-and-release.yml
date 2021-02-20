@@ -79,6 +79,18 @@ jobs:
               $(grep -v '^#' cmake-defines.txt) \
               llvm-project/llvm
 
+      - name: add Bazel files
+        run: |
+          mkdir -p install
+
+          cat <<EOF > install/WORKSPACE.bazel
+          workspace(name = "com_github_mmdriley_llvmbuilds")
+          EOF
+
+          # Empty BUILD file for now. Clients will use labels to refer to
+          # specific files in the package.
+          touch install/BUILD.bazel
+
       - name: build
         run: cmake --build build
         if: github.ref == 'refs/heads/main'
@@ -86,12 +98,6 @@ jobs:
       - name: install
         run: cmake --install build --prefix install
         if: github.ref == 'refs/heads/main'
-
-      - name: trivial build+install
-        run: |
-          mkdir -p install
-          touch install/output
-        if: github.ref == 'refs/heads/dev'
 
       - name: package
         # Build a tar and use 7-Zip to compress it with XZ. This can be a lot
