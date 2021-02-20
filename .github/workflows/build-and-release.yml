@@ -169,8 +169,7 @@ jobs:
             llvm/llvm-project@${{ needs.build.outputs.llvm_commit }}
 
             ```
-            ${{ fromJSON(steps.hash_artifacts.outputs.hash_list_json) }}
-            ```
+            ${{ fromJSON(steps.hash_artifacts.outputs.hash_list_json) }}```
 
             build logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
