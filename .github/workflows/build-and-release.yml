@@ -94,19 +94,20 @@ jobs:
         if: github.ref == 'refs/heads/dev'
 
       - name: package
-        run: 7z a ../llvm.7z .
-        working-directory: ./install
+        # Build a tar and use 7-Zip to compress it with XZ. This can be a lot
+        # faster than `tar J` because 7z uses multiple threads.
+        run: tar cv -C install . | 7z a -si llvm.tar.xz
 
       # Print the archive hash to the build log for traceability.
       - name: hash
-        run: openssl dgst -sha256 llvm.7z
+        run: openssl dgst -sha256 llvm.tar.xz
 
       - name: upload artifact
         uses: actions/upload-artifact@v2
         with:
           # runner.os is one of "Windows", "Linux", or "macOS"
           name: llvm-${{runner.os}}
-          path: llvm.7z
+          path: llvm.tar.xz
 
       # Show disk space left after the build. Not currently a problem, but LLVM
       # is big and changing build options might put us over the 14GB we're
@@ -132,9 +133,12 @@ jobs:
       # Include the run number so users can download+extract multiple releases.
       - name: rename and rearrange
         run: |
-          mv llvm-Linux/llvm.7z llvm-linux-${{ github.run_number }}.7z
-          mv llvm-macOS/llvm.7z llvm-macos-${{ github.run_number }}.7z
-          mv llvm-Windows/llvm.7z llvm-windows-${{ github.run_number }}.7z
+          mv llvm-Linux/llvm.tar.xz \
+              llvm-linux-${{ github.run_number }}.tar.xz
+          mv llvm-macOS/llvm.tar.xz \
+              llvm-macos-${{ github.run_number }}.tar.xz
+          mv llvm-Windows/llvm.tar.xz \
+              llvm-windows-${{ github.run_number }}.tar.xz
 
       # Include LLVM commit from the builder in the release message.
       # Oddly, the output from a matrixed job is returned as a single value --
@@ -158,8 +162,8 @@ jobs:
 
           # List each OS explicitly so the release will fail if any are missing.
           files: |
-            llvm-linux-*.7z
-            llvm-macos-*.7z
-            llvm-windows-*.7z
+            llvm-linux-*.tar.xz
+            llvm-macos-*.tar.xz
+            llvm-windows-*.tar.xz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
