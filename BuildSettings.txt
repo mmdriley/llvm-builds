@@ -45,6 +45,13 @@ set(LLVM_TARGETS_TO_BUILD
 set(LIBCXX_ABI_UNSTABLE ON CACHE UNINITIALIZED "")
 set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
 
+# Set a default sysroot for macOS builds. This makes it more likely a bare
+# `clang` or `clang++` invocation will work without extra configuration.
+if(APPLE)
+  set(DEFAULT_SYSROOT /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
+      CACHE UNINITIALIZED "")
+endif()
+
 # Disable assertions
 set(LIBCXX_ENABLE_ASSERTIONS OFF CACHE UNINITIALIZED "")
 set(LIBCXXABI_ENABLE_ASSERTIONS OFF CACHE UNINITIALIZED "")
