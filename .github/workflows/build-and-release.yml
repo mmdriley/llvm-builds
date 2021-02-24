@@ -71,12 +71,10 @@ jobs:
             export CXX=clang++
           fi
 
-          # Add options from `cmake-defines.txt` to the command line, but
-          # treat lines that start with `#` as comments and remove them.
           cmake \
               -G Ninja \
               -B build \
-              $(grep -v '^#' cmake-defines.txt) \
+              -C BuildSettings.txt \
               llvm-project/llvm
 
       - name: add Bazel files
