@@ -34,6 +34,17 @@ set(LLVM_TARGETS_TO_BUILD
     X86
     CACHE UNINITIALIZED "")
 
+# Build unstable libc++ (with ABI-breaking changes) and try to statically link
+# toolchain binaries against it.
+#
+# Statically linking libc++ isn't supported on non-GNU-compatible compilers
+# (MSVC) or on Apple platforms. When this file is loaded CMake hasn't done
+# compiler detection yet, so we can't determine if this is a supported target.
+# Fortunately, when unsupported the "static link" flag has no effect on the
+# build and either warns or fails silently.
+set(LIBCXX_ABI_UNSTABLE ON CACHE UNINITIALIZED "")
+set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
+
 # Disable assertions
 set(LIBCXX_ENABLE_ASSERTIONS OFF CACHE UNINITIALIZED "")
 set(LIBCXXABI_ENABLE_ASSERTIONS OFF CACHE UNINITIALIZED "")
