@@ -3,7 +3,7 @@
 # This file should be passed to CMake with `-C`, which preloads a script to
 # populate the cache.
 #
-# We use the UNINITIALIZED type for each variable to indicate "type not yet
+# We use the UNINITIALIZED type for variables to indicate "type not yet
 # specified", which matches CMake's behavior when values are provided on the
 # command line. Real types are assigned when the corresponding `set()` is hit
 # in the LLVM build. We can grep for "UNINITIALIZED" in `CMakeCache.txt` to see
@@ -16,8 +16,8 @@
 #    https://cmake.org/cmake/help/latest/command/set.html
 #    https://cmake.org/cmake/help/latest/prop_cache/TYPE.html
 
-# Set build type
-set(CMAKE_BUILD_TYPE Release CACHE UNINITALIZED "")
+# Set build type. This is a CMake built-in so we use its real type.
+set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 
 # Select components to build 
 set(LLVM_ENABLE_PROJECTS
