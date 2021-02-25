@@ -38,18 +38,26 @@ set(LLVM_TARGETS_TO_BUILD
     X86
     CACHE UNINITIALIZED "")
 
-# Build against unstable libc++ (with ABI-breaking changes) if possible.
+# Try to statically link tools against the C++ standard library. This is not
+# supported on Apple platforms or on non-GNU-compatible compilers (MSVC), but
+# it fails benignly for those targets -- a warning is raised and the build
+# output is unaffected.
+set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
+
+# Build a toolchain that will link programs against the unstable version of
+# libc++ from this build. We don't want users to have to install that libc++
+# alongside system libraries, so we only enable this on platforms where users
+# will have the option of statically linking libc++: not Apple and not MSVC
+# (see above). Effectively, this means Linux.
 #
-# Specifically, we can only do this on targets where we can statically link
-# libc++, which excludes Apple platforms and non-GNU-compatible compilers
-# (MSVC). There, we need to use the stable ABI so the tools we compile will
-# work when they load the system libraries.
-#
-# When this file is included CMake hasn't done compiler detection yet, so we
-# coarsely assume that all Windows builds are done on MSVC.
+# Some approximations here:
+#  * When this file is included CMake hasn't done compiler detection yet, so we
+#    coarsely assume that all Windows builds are done on MSVC.
+#  * We use the *host* platform to determine if the *target* will support
+#    static linking of libc++, assuming the toolchain will not be used for
+#    cross-compiling.
 if(NOT "${CMAKE_HOST_SYSTEM_NAME}" MATCHES "^(Windows|Darwin)$")
   set(LIBCXX_ABI_UNSTABLE ON CACHE UNINITIALIZED "")
-  set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
 endif()
 
 # Set a default sysroot for macOS builds. This makes it more likely a bare
