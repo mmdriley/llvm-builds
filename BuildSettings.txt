@@ -38,20 +38,23 @@ set(LLVM_TARGETS_TO_BUILD
     X86
     CACHE UNINITIALIZED "")
 
-# Build unstable libc++ (with ABI-breaking changes) and try to statically link
-# toolchain binaries against it.
+# Build against unstable libc++ (with ABI-breaking changes) if possible.
 #
-# Statically linking libc++ isn't supported on non-GNU-compatible compilers
-# (MSVC) or on Apple platforms. When this file is loaded CMake hasn't done
-# compiler detection yet, so we can't determine if this is a supported target.
-# Fortunately, when unsupported the "static link" flag has no effect on the
-# build and either warns or fails silently.
-set(LIBCXX_ABI_UNSTABLE ON CACHE UNINITIALIZED "")
-set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
+# Specifically, we can only do this on targets where we can statically link
+# libc++, which excludes Apple platforms and non-GNU-compatible compilers
+# (MSVC). There, we need to use the stable ABI so the tools we compile will
+# work when they load the system libraries.
+#
+# When this file is included CMake hasn't done compiler detection yet, so we
+# coarsely assume that all Windows builds are done on MSVC.
+if(NOT "${CMAKE_HOST_SYSTEM_NAME}" MATCHES "$(Windows|Darwin)^")
+  set(LIBCXX_ABI_UNSTABLE ON CACHE UNINITIALIZED "")
+  set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
+endif()
 
 # Set a default sysroot for macOS builds. This makes it more likely a bare
 # `clang` or `clang++` invocation will work without extra configuration.
-if(APPLE)
+if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "$(Darwin)^")
   set(DEFAULT_SYSROOT /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
       CACHE UNINITIALIZED "")
 endif()
