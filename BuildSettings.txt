@@ -19,6 +19,10 @@
 # Set build type. This is a CMake built-in so we use its real type.
 set(CMAKE_BUILD_TYPE Release CACHE STRING "")
 
+# Only install the toolchain components of LLVM rather than all the libraries
+# and headers.
+set(LLVM_INSTALL_TOOLCHAIN_ONLY ON CACHE UNINITIALIZED "")
+
 # Select components to build 
 set(LLVM_ENABLE_PROJECTS
     clang
