@@ -58,7 +58,7 @@ jobs:
       - name: set MSVC environment variables
         uses: ilammy/msvc-dev-cmd@v1.5.0
 
-      - name: configure
+      - name: generate
         run: |
           # Use MSVC on Windows and Clang everywhere else.
           # Using MSVC fixed build errors related to platform headers that were
@@ -76,6 +76,9 @@ jobs:
               -B build \
               -C BuildSettings.txt \
               llvm-project/llvm
+
+      - name: print build configuration (CMake cache)
+        run: cmake -B build -N -LAH
 
       - name: build
         run: cmake --build build
