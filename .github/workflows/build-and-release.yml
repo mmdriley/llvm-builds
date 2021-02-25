@@ -77,18 +77,6 @@ jobs:
               -C BuildSettings.txt \
               llvm-project/llvm
 
-      - name: add Bazel files
-        run: |
-          mkdir -p install
-
-          cat <<EOF > install/WORKSPACE.bazel
-          workspace(name = "com_github_mmdriley_llvmbuilds")
-          EOF
-
-          # Empty BUILD file for now. Clients will use labels to refer to
-          # specific files in the package.
-          touch install/BUILD.bazel
-
       - name: build
         run: cmake --build build
         if: github.ref == 'refs/heads/main'
@@ -100,7 +88,9 @@ jobs:
       - name: package
         # Build a tar and use 7-Zip to compress it with XZ. This can be a lot
         # faster than `tar J` because 7z uses multiple threads.
-        run: tar cv -C install . | 7z a -si llvm.tar.xz
+        run: |
+          mkdir -p install  # in case we skipped build+install
+          tar cv -C install . | 7z a -si llvm.tar.xz
 
       # Print the archive hash to the build log for traceability.
       - name: hash
