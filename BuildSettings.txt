@@ -47,14 +47,14 @@ set(LLVM_TARGETS_TO_BUILD
 #
 # When this file is included CMake hasn't done compiler detection yet, so we
 # coarsely assume that all Windows builds are done on MSVC.
-if(NOT "${CMAKE_HOST_SYSTEM_NAME}" MATCHES "$(Windows|Darwin)^")
+if(NOT "${CMAKE_HOST_SYSTEM_NAME}" MATCHES "^(Windows|Darwin)$")
   set(LIBCXX_ABI_UNSTABLE ON CACHE UNINITIALIZED "")
   set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
 endif()
 
 # Set a default sysroot for macOS builds. This makes it more likely a bare
 # `clang` or `clang++` invocation will work without extra configuration.
-if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "$(Darwin)^")
+if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "^(Darwin)$")
   set(DEFAULT_SYSROOT /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk
       CACHE UNINITIALIZED "")
 endif()
