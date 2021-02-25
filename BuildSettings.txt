@@ -16,12 +16,15 @@
 #    https://cmake.org/cmake/help/latest/command/set.html
 #    https://cmake.org/cmake/help/latest/prop_cache/TYPE.html
 
+
 # Set build type. This is a CMake built-in so we use its real type.
 set(CMAKE_BUILD_TYPE Release CACHE STRING "")
+
 
 # Only install the toolchain components of LLVM rather than all the libraries
 # and headers.
 set(LLVM_INSTALL_TOOLCHAIN_ONLY ON CACHE UNINITIALIZED "")
+
 
 # Select components to build 
 set(LLVM_ENABLE_PROJECTS
@@ -38,11 +41,13 @@ set(LLVM_TARGETS_TO_BUILD
     X86
     CACHE UNINITIALIZED "")
 
+
 # Try to statically link tools against the C++ standard library. This is not
 # supported on Apple platforms or on non-GNU-compatible compilers (MSVC), but
 # it fails benignly for those targets -- a warning is raised and the build
 # output is unaffected.
 set(LLVM_STATIC_LINK_CXX_STDLIB ON CACHE UNINITIALIZED "")
+
 
 # Build a toolchain that will link programs against the unstable version of
 # libc++ from this build. We don't want users to have to install that libc++
@@ -60,6 +65,7 @@ if(NOT "${CMAKE_HOST_SYSTEM_NAME}" MATCHES "^(Windows|Darwin)$")
   set(LIBCXX_ABI_UNSTABLE ON CACHE UNINITIALIZED "")
 endif()
 
+
 # Set a default sysroot for macOS builds. This makes it more likely a bare
 # `clang` or `clang++` invocation will work without extra configuration.
 if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "^(Darwin)$")
@@ -67,10 +73,12 @@ if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "^(Darwin)$")
       CACHE UNINITIALIZED "")
 endif()
 
+
 # Disable assertions
 set(LIBCXX_ENABLE_ASSERTIONS OFF CACHE UNINITIALIZED "")
 set(LIBCXXABI_ENABLE_ASSERTIONS OFF CACHE UNINITIALIZED "")
 set(LLVM_ENABLE_ASSERTIONS OFF CACHE UNINITIALIZED "")
+
 
 # Disable/remove parts of the build
 set(CLANG_ENABLE_ARCMT OFF CACHE UNINITIALIZED "")
